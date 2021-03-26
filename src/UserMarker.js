@@ -46,9 +46,9 @@ export class UserMarker {
 
     // Create new sphere
     this.geometry = new THREE.SphereGeometry( this.d,10,10);
-    this.material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+    this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
     this.material.transparent = true;
-    this.material.opacity = 0.5
+    // this.material.opacity = 0.5
     this.sphere = new THREE.Mesh( this.geometry, this.material );
     this.sphere.position.set(this.x-this.meshWidth/2, -this.y+this.meshHeight/2, 0.1);
     this.sphere.opacity = 0.5

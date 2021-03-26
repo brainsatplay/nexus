@@ -4,21 +4,29 @@ import {UserMarker} from './UserMarker'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
 // Scene
 const scene = new THREE.Scene()
-const light = new THREE.PointLight(0xffffff, 2);
+const light = new THREE.PointLight(0x00b3ff, 2);
 light.position.set(0, 5, 10);
 scene.add(light);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
 camera.position.z = 3
 
-const renderer =  new THREE.WebGLRenderer()
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    alpha: true
+})
 renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
 document.body.appendChild(renderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
-controls.screenSpacePanning = true //so that panning up and down doesn't zoom in/out
+controls.screenSpacePanning = true
+controls.enableDamping = true
 //controls.addEventListener('change', render)
 
 let imageWidth = 1200;
@@ -39,8 +47,7 @@ material.displacementMap = displacementMap
 const plane = new THREE.Mesh(planeGeometry, material)
 scene.add(plane)
 
-window.addEventListener('resize', onWindowResize, false)
-function onWindowResize() {
+window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     meshWidth = fov_y * camera.aspect
@@ -51,11 +58,30 @@ function onWindowResize() {
     })
     renderer.setSize(window.innerWidth, window.innerHeight)
     render()
-}
+}, 
+false)
+
+window.addEventListener('dblclick', () => {
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+    if (!fullscreenElement){
+        if (canvas.requestFullscreen){
+            canvas.requestFullscreen()
+        } else if (canvas.webkitRequestFullscreen){
+            canvas.webkitRequestFullscreen()
+        }
+    } else {
+        if (document.exitFullscreen){
+            document.exitFullscreen()
+        } else if (document.webkitExitFullscreen){
+            document.webkitExitFullscreen()
+        }
+    }
+})
 
 // const gui = new dat.GUI()
 material.transparent = true;
-material.opacity = 0.20;
+material.depthTest = false;
+material.opacity = 0.3;
 
 var data = {
     color: '#ffffff',
@@ -87,14 +113,15 @@ function updateMaterial() {
 var animate = function () {
     requestAnimationFrame(animate)
     draw()
+    controls.update()
     render()
 };
 
 let points = new Map()
-points.set('me',new UserMarker({diameter:1e-4/3, meshWidth:meshWidth, meshHeight:meshHeight}))
-points.set('EC',new UserMarker({latitude: 44.8114, longitude: -91.4985, diameter:1e-1/3, meshWidth:meshWidth, meshHeight:meshHeight})) // EC, WI
-points.set('CapeCod',new UserMarker({latitude: -33.918861, longitude: 18.423300, diameter:1e-1/3, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
-points.set('LA',new UserMarker({latitude: 34.0522, longitude: -118.2437, diameter:1e-1/3, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
+let diameter = 1e-1/6;
+points.set('me',new UserMarker({diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight}))
+points.set('CapeCod',new UserMarker({latitude: -33.918861, longitude: 18.423300, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
+points.set('LA',new UserMarker({latitude: 34.0522, longitude: -118.2437, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
 
 getGeolocation()
 
@@ -108,27 +135,30 @@ function draw(){
             scene.remove( obj );
         })
 
+        point.sphere.material.opacity = 0.01 + (Math.cos(Date.now()/1000)+1.0)/2
+
         // Add new sphere
         scene.add(point.sphere)
     })
 }
 
+// Geolocation
 function getGeolocation(){
-    var options = {
+    navigator.geolocation.getCurrentPosition(
+       // Success   
+    (pos) => {
+        points.get('me').setGeolocation(pos.coords)
+    }, 
+    // Error
+    (err) => {
+        console.warn(`ERROR(${err.code}): ${err.message}`);
+    }, 
+    // Options
+    {
         enableHighAccuracy: true,
         timeout: 5000,
         maximumAge: 0
-      };
-      
-      function success(pos) {
-        points.get('me').setGeolocation(pos.coords.latitude, pos.coords.longitude)
-      }
-      
-      function error(err) {
-        console.warn(`ERROR(${err.code}): ${err.message}`);
-      }
-
-      navigator.geolocation.getCurrentPosition(success, error, options);
+    });
 }
 
 function render() {
