@@ -1,0 +1,57 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: black;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+.webgl
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    outline: none;
+    /* mix-blend-mode: exclusion; */
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    box-sizing: border-box;
+    text-align: left;
+    height: 100vh;
+    width: 100vw;
+    padding: 100px;
+    color: white;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#gameHero {
+    transition-delay: 2s;
+    transition-duration: 3.0s;
+    transition-property: opacity;
+}
+
+h1 {
+    font-size: 7rem;
+    text-transform: uppercase;
+}
+
+section {
+    height: 100vh;
+}
+
+/*# sourceMappingURL=main.css.map*/
