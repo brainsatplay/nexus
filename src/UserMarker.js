@@ -41,17 +41,17 @@ export class UserMarker {
   }
 
   createSphere(){
-    // // Log old sphere
-    // if (this.sphere != undefined) {this.prevSpheres.push(this.sphere)}
+    // Log old sphere
+    if (this.sphere != undefined) {this.prevSpheres.push(this.sphere)}
 
-    // // Create new sphere
-    // this.geometry = new THREE.SphereGeometry( this.d,10,10);
-    // this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
-    // this.material.transparent = true;
-    // // this.material.opacity = 0.5
-    // this.sphere = new THREE.Mesh( this.geometry, this.material );
-    // this.sphere.position.set(this.x, this.y, 0.1);
-    // this.sphere.opacity = 0.5
+    // Create new sphere
+    this.geometry = new THREE.SphereGeometry( this.d,10,10);
+    this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+    this.material.transparent = true;
+    // this.material.opacity = 0.5
+    this.sphere = new THREE.Mesh( this.geometry, this.material );
+    this.sphere.position.set(this.x, this.y, 0.1);
+    this.sphere.opacity = 0.5
   }
 
   mercX(lon) { 

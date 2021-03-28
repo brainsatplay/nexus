@@ -4,7 +4,6 @@ import {UserMarker} from './UserMarker'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 import Stats from 'three/examples/jsm/libs/stats.module'
-// import typeFaceFont from 'three/examples/fonts/helvetiker_regular.typeface.json'
 
 // Loading Manager
 const loadingManager = new THREE.LoadingManager()
@@ -20,33 +19,33 @@ const textureLoader = new THREE.TextureLoader()
 const matcapTexture = textureLoader.load('/textures/matcaps/8.png')
 
 
-// fonts
-const fontLoader = new THREE.FontLoader()
-fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
-    points.forEach((point,name) => {
+// // fonts
+// const fontLoader = new THREE.FontLoader()
+// fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+//     points.forEach((point,name) => {
 
-        const textGeometry = new THREE.TextBufferGeometry(
-            name,
-            {
-                font: font,
-                size: 0.5/10,
-                height: 0.2/10,
-                curveSegments: 5,
-                bevelEnabled: true,
-                bevelThickness: 0.03/10,
-                bevelSize:0.02/10,
-                bevelOffset:0,
-                bevelSegments: 4
-            }
-        )
-        textGeometry.computeBoundingBox()
-        textGeometry.center()
-        const textMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
-        const text = new THREE.Mesh(textGeometry, textMaterial)
-        text.position.set(point.x, point.y, 0.1)
-        scene.add(text)
-    })
-})
+//         const textGeometry = new THREE.TextBufferGeometry(
+//             name,
+//             {
+//                 font: font,
+//                 size: 0.5/10,
+//                 height: 0.2/10,
+//                 curveSegments: 5,
+//                 bevelEnabled: true,
+//                 bevelThickness: 0.03/10,
+//                 bevelSize:0.02/10,
+//                 bevelOffset:0,
+//                 bevelSegments: 4
+//             }
+//         )
+//         textGeometry.computeBoundingBox()
+//         textGeometry.center()
+//         const textMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+//         const text = new THREE.Mesh(textGeometry, textMaterial)
+//         text.position.set(point.x, point.y, 0.1)
+//         scene.add(text)
+//     })
+// })
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -182,20 +181,20 @@ document.body.appendChild(stats.dom)
 
 // Draw Shapes
 function placeUsers(){
-    // points.forEach(point => {
+    points.forEach(point => {
 
-    //     // Remove old spheres
-    //     point.prevSpheres.forEach((obj) => {
-    //         obj.geometry.dispose();
-    //         obj.material.dispose();
-    //         scene.remove( obj );
-    //     })
+        // Remove old spheres
+        point.prevSpheres.forEach((obj) => {
+            obj.geometry.dispose();
+            obj.material.dispose();
+            scene.remove( obj );
+        })
 
-    //     point.sphere.material.opacity = 0.01 + (Math.cos(Date.now()/1000)+1.0)/2
+        point.sphere.material.opacity = 0.01 + (Math.cos(Date.now()/1000)+1.0)/2
 
-    //     // Add new sphere
-    //     scene.add(point.sphere)
-    // })
+        // Add new sphere
+        scene.add(point.sphere)
+    })
 }
 
 // Geolocation
