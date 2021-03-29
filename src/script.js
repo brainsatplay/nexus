@@ -4,6 +4,11 @@ import {UserMarker} from './UserMarker'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 import Stats from 'three/examples/jsm/libs/stats.module'
+import testVertexShader from './shaders/test/vertex.glsl'
+import testFragmentShader from './shaders/test/fragment.glsl'
+
+// Raycaster
+const raycaster = new THREE.Raycaster()
 
 // Loading Manager
 const loadingManager = new THREE.LoadingManager()
@@ -12,14 +17,15 @@ loadingManager.onProgress = () => {
 }
 
 // Textures
-const texture = new THREE.TextureLoader(loadingManager).load("/img/mapTexture.jpeg")
-const displacementMap = new THREE.TextureLoader(loadingManager).load("/img/mapDisplacement.jpeg")
-
-const textureLoader = new THREE.TextureLoader()
-const matcapTexture = textureLoader.load('/textures/matcaps/8.png')
+const texture = new THREE.TextureLoader(loadingManager).load("./img/mapTexture.jpeg")
+// const texture = new THREE.TextureLoader(loadingManager).load("./img/map.jpeg")
+const displacementMap = new THREE.TextureLoader(loadingManager).load("./img/mapDisplacement.jpeg")
 
 
-// // fonts
+// const textureLoader = new THREE.TextureLoader()
+// const matcapTexture = textureLoader.load('./textures/matcaps/8.png')
+
+// // Text
 // const fontLoader = new THREE.FontLoader()
 // fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
 //     points.forEach((point,name) => {
@@ -52,16 +58,11 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+// const light = new THREE.AmbientLight(0x00b3ff);
 const light = new THREE.AmbientLight(0xffffff);
 light.position.set(0, 5, 10);
 light.intensity = 1.4;
 scene.add(light);
-
-// const redLight = new THREE.DirectionalLight(0xff0000,1);
-// redLight.position.set(0, 0, 1.0);
-// scene.add(redLight);
-// const helper = new THREE.DirectionalLightHelper( redLight, 1 );
-// scene.add( helper );
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
 camera.position.z = 3
@@ -80,18 +81,72 @@ controls.screenSpacePanning = true
 controls.enableDamping = true
 //controls.addEventListener('change', render)
 
+// Mouse
+const mouse = new THREE.Vector2()
+window.addEventListener('mousemove', (e) => {
+    mouse.x = (e.clientX/window.innerWidth) * 2 - 1
+    mouse.y = -(e.clientY/window.innerHeight) * 2 + 1
+})
+
+
+window.addEventListener('click', () => {
+    if (currentIntersect){
+        currentIntersect.object.material.opacity = 1.0 
+    }
+})
+
 // Texture
 let imageWidth = 1200;
 let imageHeight = 600;
-const segmentsX = 150
+const segmentsX = 400
 const imageAspect = imageWidth/imageHeight
 let fov_y = camera.position.z * camera.getFilmHeight() / camera.getFocalLength();
 let meshWidth = fov_y * camera.aspect;
 let meshHeight = meshWidth / imageAspect;
+
+// Set Default Users
+let points = new Map()
+let diameter = 1e-2/4;
+points.set('me',new UserMarker({diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight}))
+// points.set('Los Angeles',new UserMarker({latitude: 34.0522, longitude: -118.2437, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
+// let la = points.get('Los Angeles')
+// Plane
 const planeGeometry = new THREE.PlaneGeometry(meshWidth, meshHeight, segmentsX, segmentsX/imageAspect)
-const material = new THREE.MeshStandardMaterial()
-material.map = texture
-material.displacementMap = displacementMap
+// const count = planeGeometry.attributes.position.count
+// const randoms = new Float32Array(count)
+// for(let i = 0; i < count; i++)
+// {
+//     randoms[i] = Math.random()
+// }
+// planeGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+// console.log(displacementMap)
+// planeGeometry.setAttribute('displacement', new THREE.BufferAttribute(displacementMap, 1))
+
+
+// const material = new THREE.MeshStandardMaterial()
+// material.map = texture
+let tStart = Date.now()
+ let point1 = {
+    position: new THREE.Vector2(NaN,NaN)
+ }
+ let pointArr = [point1]
+const material = new THREE.ShaderMaterial({
+    vertexShader: testVertexShader,
+    fragmentShader: testFragmentShader,
+    transparent: true,
+    wireframe: true,
+    uniforms:
+    {
+        points: { value: [point1] },
+        count: {value: pointArr.length },
+        uTime: { value: 0 },
+        uTexture: { value: texture },
+        displacementMap: { value: displacementMap },
+        displacementHeight: { value: 0.1 },
+        colorThreshold: { value: 0.05 },
+    }
+})
+
 
 // Mesh
 const plane = new THREE.Mesh(planeGeometry, material)
@@ -107,6 +162,10 @@ window.addEventListener('resize', () => {
     points.forEach(point => {
         point.updateMesh(meshWidth,meshHeight)
     })
+    let me = points.get('me')
+    material.uniforms.points.value[0]= {
+        position: new THREE.Vector2(me.x,me.y)
+     }
     renderer.setSize(window.innerWidth, window.innerHeight)
 }, 
 false)
@@ -130,13 +189,8 @@ window.addEventListener('dblclick', () => {
 })
 
 // Material Properties
-material.transparent = true;
-material.depthTest = false;
-material.opacity = 0.3;
-
-material.color.setHex(Number('0x00b3ff'.replace('#', '0x')))
-material.displacementScale = 0.1;
-material.wireframe = true;
+// material.wireframe = true;
+material.blending = THREE.AdditiveBlending
 
 function regeneratePlaneGeometry() {
     let newGeometry = new THREE.PlaneGeometry(
@@ -146,28 +200,17 @@ function regeneratePlaneGeometry() {
     plane.geometry = newGeometry
 }
 
-
-function updateMaterial() {
-    material.side = Number(material.side)
-    material.needsUpdate = true
-}
-
-
 // Animate
+let currentIntersect = null
+
 var animate = function () {
     requestAnimationFrame(animate)
-    placeUsers()
+    animateUsers()
+    material.uniforms.uTime.value = Date.now() - tStart
     stats.update()
     controls.update()
     renderer.render(scene, camera)
 };
-
-// Set Default Users
-let points = new Map()
-let diameter = 1e-1/6;
-points.set('me',new UserMarker({diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight}))
-points.set('Cape Horn',new UserMarker({latitude: -33.918861, longitude: 18.423300, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
-points.set('Los Angeles',new UserMarker({latitude: 34.0522, longitude: -118.2437, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
 
 // Get My Location
 getGeolocation()
@@ -177,23 +220,43 @@ const stats = Stats()
 document.body.appendChild(stats.dom)
 
 // GUI
-// const gui = new dat.GUI();
+const gui = new dat.GUI({width: 400});
+gui.add(material.uniforms.colorThreshold, 'value').min(0).max(1).step(0.001).name('Threshold')
 
 // Draw Shapes
-function placeUsers(){
+function animateUsers(){
+    raycaster.setFromCamera(mouse,camera)
+    const objectArray = Array.from( points.keys() ).map(key => points.get(key).marker)
+    const intersects = raycaster.intersectObjects(objectArray)
+
+    if (intersects.length){
+        if (currentIntersect === null){
+            const scale = intersects[0].object.scale
+            intersects[0].object.scale.set(scale.x*2,scale.y*2,scale.z*2)
+            intersects[0].object.material.opacity = 0.75
+        }
+        currentIntersect = intersects[0]
+        
+    } else {
+        if (currentIntersect !== null){
+            const scale = currentIntersect.object.scale
+            currentIntersect.object.scale.set(scale.x/2,scale.y/2,scale.z/2)
+            currentIntersect.object.material.opacity = 0.50
+        }
+        currentIntersect = null;
+    }
+
     points.forEach(point => {
 
-        // Remove old spheres
-        point.prevSpheres.forEach((obj) => {
+        // Remove old marker
+        point.prevMarkers.forEach((obj) => {
             obj.geometry.dispose();
             obj.material.dispose();
             scene.remove( obj );
         })
 
-        point.sphere.material.opacity = 0.01 + (Math.cos(Date.now()/1000)+1.0)/2
-
-        // Add new sphere
-        scene.add(point.sphere)
+        // Add new marker
+        scene.add(point.marker)
     })
 }
 
@@ -203,6 +266,10 @@ function getGeolocation(){
        // Success   
     (pos) => {
         points.get('me').setGeolocation(pos.coords)
+        let me = points.get('me')
+        material.uniforms.points.value[0]= {
+            position: new THREE.Vector2(me.x,me.y)
+         }
     }, 
     // Error
     (err) => {

@@ -9,56 +9,59 @@ export class UserMarker {
     this.d = settings.diameter;
     this.meshWidth = settings.meshWidth;
     this.meshHeight = settings.meshHeight;
-    this.x = this.mercX(this.longitude);
-    this.y = this.mercY(this.latitude);
+    this.x = this.mercX();
+    this.y = this.mercY();
     this.geometry;
     this.material;
-    this.sphere;
-    this.prevSpheres = []
-    this.createSphere()
+    this.marker;
+    this.prevMarkers = []
+    this.createMarker()
   }
 
   updateMesh(meshWidth,meshHeight){
     this.meshWidth = meshWidth;
     this.meshHeight = meshHeight;
-    this.x = this.mercX(this.longitude);
-    this.y = this.mercY(this.latitude);
-    this.createSphere()
+    this.x = this.mercX();
+    this.y = this.mercY();
+    console.log(this.x,this.y)
+    this.createMarker()
   }
 
   setLatitude(lat){
+    this.latitude = lat
     this.y = this.mercY(lat);
   }
   
   setLongitude(lon){
+    this.longitude = lon
     this.x = this.mercX(lon);
   }
 
   setGeolocation(geolocation){
     this.setLatitude(geolocation.latitude)
     this.setLongitude(geolocation.longitude)
-    this.createSphere()
+    this.createMarker()
   }
 
-  createSphere(){
+  createMarker(){
     // Log old sphere
-    if (this.sphere != undefined) {this.prevSpheres.push(this.sphere)}
+    if (this.marker != undefined) {this.prevMarkers.push(this.marker)}
 
-    // Create new sphere
+    // this.marker = new THREE.PointLight(0xff0000, 100,0.1);
+    // this.marker.position.set(this.x, this.y, 0.15);
+    // // Create new sphere
     this.geometry = new THREE.SphereGeometry( this.d,10,10);
-    this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
-    this.material.transparent = true;
-    // this.material.opacity = 0.5
-    this.sphere = new THREE.Mesh( this.geometry, this.material );
-    this.sphere.position.set(this.x, this.y, 0.1);
-    this.sphere.opacity = 0.5
+    this.material = new THREE.MeshBasicMaterial( {color: 0xffffff, opacity: 0.5, transparent: true} );
+    this.marker = new THREE.Mesh( this.geometry, this.material );
+    this.marker.position.set(this.x, this.y, 0.12);
+    this.marker.geometry.computeBoundingBox()
   }
 
-  mercX(lon) { 
+  mercX(lon=this.longitude) { 
     return (lon+180)*(this.meshWidth/360) - this.meshWidth/2
   }
   
-  mercY(lat) {
+  mercY(lat=this.latitude) {
     return -((this.meshHeight/180.0) * (90 - lat)) + this.meshHeight/2;
   }
 
