@@ -4,8 +4,8 @@ import {UserMarker} from './UserMarker'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 import Stats from 'three/examples/jsm/libs/stats.module'
-import testVertexShader from './shaders/test/vertex.glsl'
-import testFragmentShader from './shaders/test/fragment.glsl'
+import testVertexShader from './shaders/map/vertex.glsl'
+import testFragmentShader from './shaders/map/fragment.glsl'
 
 // Raycaster
 const raycaster = new THREE.Raycaster()
