@@ -4,6 +4,7 @@ import * as THREE from 'three'
 // let zoom = 1;
 export class UserMarker {
   constructor(settings) {
+    this.name = settings.name
     this.latitude = settings.latitude
     this.longitude = settings.longitude
     this.d = settings.diameter;
@@ -11,11 +12,40 @@ export class UserMarker {
     this.meshHeight = settings.meshHeight;
     this.x = this.mercX();
     this.y = this.mercY();
+    this.z = 0.12;
     this.geometry;
     this.material;
     this.marker;
     this.prevMarkers = []
     this.createMarker()
+    this.createHTMLElement()
+    this.element = document.querySelector(`.point-${this.name}`)
+  }
+
+  createHTMLElement(){
+    document.querySelector(`.point-container`).innerHTML += `
+    <div class="point point-${this.name}">
+      <div class="label">${this.name}</div>
+      <div class="text">${this.name} is down here. Scroll to zoom in and see.</div>
+    </div>
+    `
+  }
+
+  animateLabel(camera){
+    let screenPos = new THREE.Vector3(this.x,this.y,this.z)
+    let distanceToPoint = screenPos.distanceTo(new THREE.Vector3(
+      camera.position.x,
+      camera.position.y,
+      camera.position.z))
+    if (distanceToPoint < 0.1){
+      this.element.classList.remove('visible')
+    } else {
+      this.element.classList.add('visible')
+    }
+    screenPos.project(camera)
+    let translateX = window.innerWidth * screenPos.x * 0.5
+    let translateY = -window.innerHeight * screenPos.y * 0.5
+    this.element.style.transform = `translate(${translateX}px,${translateY}px)`
   }
 
   updateMesh(meshWidth,meshHeight){
@@ -47,13 +77,11 @@ export class UserMarker {
     // Log old sphere
     if (this.marker != undefined) {this.prevMarkers.push(this.marker)}
 
-    // this.marker = new THREE.PointLight(0xff0000, 100,0.1);
-    // this.marker.position.set(this.x, this.y, 0.15);
-    // // Create new sphere
+    // Create new sphere
     this.geometry = new THREE.SphereGeometry( this.d,10,10);
     this.material = new THREE.MeshBasicMaterial( {color: 0xffffff, opacity: 0.5, transparent: true} );
     this.marker = new THREE.Mesh( this.geometry, this.material );
-    this.marker.position.set(this.x, this.y, 0.12);
+    this.marker.position.set(this.x, this.y, this.z);
     this.marker.geometry.computeBoundingBox()
   }
 

@@ -10,6 +10,7 @@ uniform vec2 point;
 uniform sampler2D displacementMap;
 uniform float displacementHeight;
 uniform float colorThreshold;
+uniform float aspectRatio;
 
 varying vec2 vUv;
 varying float colorOffset;
@@ -21,7 +22,7 @@ void main()
     vec4 textureElevation = texture2D(displacementMap, vUv);
     colorOffset = 0.0;
     //   for (int p = 0; p < 1; p++) {
-        float dist = abs(distance(point,modelPosition.xy));
+        float dist = abs(distance(point,modelPosition.xy))/aspectRatio;
         if (dist <= colorThreshold){
             colorOffset = dist;
             modelPosition.z += max(textureElevation.r*displacementHeight,displacementHeight);

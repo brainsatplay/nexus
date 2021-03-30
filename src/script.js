@@ -16,6 +16,8 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 import { SobelOperatorShader } from 'three/examples/jsm/shaders/SobelOperatorShader.js';
 import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { gsap } from 'gsap'
 
 /**
  * Nexus: Neurofeedback + Group Meditation
@@ -25,17 +27,31 @@ import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js
 const raycaster = new THREE.Raycaster()
 
 // Loading Manager
-const loadingManager = new THREE.LoadingManager()
-loadingManager.onProgress = () => {
-    console.log('progressing')
-}
+const loadingBarElement = document.querySelector('.loading-bar')
 
+const loadingManager = new THREE.LoadingManager(
+    // Loaded
+    () => {
+        gsap.delayedCall(0.5,() => 
+        {
+        gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0 })
+        loadingBarElement.classList.add('ended')
+        loadingBarElement.style.transform = ''
+        })
+    },
+
+    // Progress
+    (itemURL, itemsLoaded, itemsTotal) => {
+        loadingBarElement.style.transform = `scaleX(${itemsLoaded/itemsTotal})`
+    }
+)
+const gltfLoader = new GLTFLoader(loadingManager)
+const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager)
 // Textures
 const textureLoader = new THREE.TextureLoader(loadingManager)
 const texture = textureLoader.load("./img/mapTexture.jpeg")
 // const futuristicInterface = textureLoader.load('./textures/interfaceNormalMap.png')
 const displacementMap = textureLoader.load("./img/mapDisplacement.jpeg")
-
 
 // const matcapTexture = textureLoader.load('./textures/matcaps/8.png')
 
@@ -67,17 +83,24 @@ const displacementMap = textureLoader.load("./img/mapDisplacement.jpeg")
 //     })
 // })
 
-// Canvas
+/**
+ * Canvas
+ */
 const canvas = document.querySelector('canvas.webgl')
 
-// Scene
+/**
+ * Scene
+ */
 const scene = new THREE.Scene()
-// const light = new THREE.AmbientLight(0x00b3ff);
-const light = new THREE.AmbientLight(0xffffff);
-light.position.set(0, 5, 10);
-light.intensity = 1.4;
-scene.add(light);
+// // const light = new THREE.AmbientLight(0x00b3ff);
+// const light = new THREE.AmbientLight(0xffffff);
+// light.position.set(0, 5, 10);
+// light.intensity = 1.4;
+// scene.add(light);
 
+/**
+ * Camera
+ */
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000)
 camera.position.z = 3
 
@@ -85,6 +108,48 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     alpha: true
 })
+
+/**
+ * Texture Params
+ */
+ let imageWidth = 1200
+ let imageHeight = 600
+ const segmentsX = 400
+ const imageAspect = imageWidth/imageHeight
+ let fov_y = camera.position.z * camera.getFilmHeight() / camera.getFocalLength();
+ let meshWidth = fov_y * camera.aspect;
+ let meshHeight = meshWidth / imageAspect;
+
+/**
+ * Overlay
+ */
+const overlayGeometry = new THREE.PlaneGeometry(meshWidth, fov_y, 1, 1)
+const overlayMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    uniforms:
+    {
+        uAlpha: { value: 1 }
+    },
+    vertexShader: `
+        void main()
+        {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float uAlpha;
+    
+        void main()
+        {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+        }
+    `
+})
+const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial)
+overlay.position.z = 0.2
+scene.add(overlay)
+
+// Renderer
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
 document.body.appendChild(renderer.domElement)
@@ -196,36 +261,15 @@ window.addEventListener('click', () => {
     }
 })
 
-// Texture
-let imageWidth = 1200
-let imageHeight = 600
-const segmentsX = 400
-const imageAspect = imageWidth/imageHeight
-let fov_y = camera.position.z * camera.getFilmHeight() / camera.getFocalLength();
-let meshWidth = fov_y * camera.aspect;
-let meshHeight = meshWidth / imageAspect;
-
 // Set Default Users
 let points = new Map()
 let diameter = 1e-2/4;
-points.set('me',new UserMarker({diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight}))
+points.set('me',new UserMarker({name: 'me',diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight}))
 // points.set('Los Angeles',new UserMarker({latitude: 34.0522, longitude: -118.2437, diameter:diameter, meshWidth:meshWidth, meshHeight:meshHeight})); // Cape Town
 // let la = points.get('Los Angeles')
+
 // Plane
 const planeGeometry = new THREE.PlaneGeometry(meshWidth, meshHeight, segmentsX, segmentsX/imageAspect)
-// const count = planeGeometry.attributes.position.count
-// const randoms = new Float32Array(count)
-// for(let i = 0; i < count; i++)
-// {
-//     randoms[i] = Math.random()
-// }
-// planeGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
-// console.log(displacementMap)
-// planeGeometry.setAttribute('displacement', new THREE.BufferAttribute(displacementMap, 1))
-
-
-// const material = new THREE.MeshStandardMaterial()
-// material.map = texture
 let tStart = Date.now()
 //  let point1 = {
 //     position: new THREE.Vector2(NaN,NaN)
@@ -233,6 +277,7 @@ let tStart = Date.now()
 //  let pointArr = new Float32Array() //[point1]
 //  pointArr[0] = NaN
 //  pointArr[1] = NaN
+
 const material = new THREE.ShaderMaterial({
     vertexShader: mapVertexShader,
     fragmentShader: mapFragmentShader,
@@ -249,7 +294,9 @@ const material = new THREE.ShaderMaterial({
         uTexture: { value: texture },
         displacementMap: { value: displacementMap },
         displacementHeight: { value: 0.1 },
-        colorThreshold: { value: 0.05 },
+        colorThreshold: { value: 0.030},
+        aspectRatio: {value: window.innerWidth / window.innerHeight}
+        // colorThreshold: { value: new THREE.Vector2(0.05*window.innerWidth,0.05*window.innerHeight) },
     }
 })
 
@@ -268,12 +315,20 @@ window.addEventListener('resize', () => {
     regeneratePlaneGeometry()
     points.forEach(point => {
         point.updateMesh(meshWidth,meshHeight)
+        let screenPos = new THREE.Vector3(point.x,point.y,point.z)
+        screenPos.project(camera)
+        let translateX = window.innerWidth * screenPos.x * 0.5
+        point.element.style.transform = `translate(${translateX}px)`
     })
+
     let me = points.get('me')
     // material.uniforms.points.value[0]= {
     //     position: new THREE.Vector2(me.x,me.y)
     //  }
     material.uniforms.point.value = new THREE.Vector2(me.x,me.y)
+    material.uniforms.aspectRatio.value = window.innerWidth / window.innerHeight
+    controls.target.set(me.x,me.y,0.12)
+    camera.position.set(me.x,me.y)
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -315,6 +370,9 @@ var animate = function () {
     requestAnimationFrame(animate)
     animateUsers()
     material.uniforms.uTime.value = Date.now() - tStart
+    points.forEach(point => {
+        point.animateLabel(camera)
+    })
     // stats.update()
     controls.update()
     // renderer.render(scene, camera)
@@ -323,6 +381,7 @@ var animate = function () {
 
 // Get My Location
 getGeolocation()
+
 
 // Stats
 // const stats = Stats()
@@ -376,9 +435,9 @@ function getGeolocation(){
         //     position: new THREE.Vector2(me.x,me.y)
         //  }
          material.uniforms.point.value = new THREE.Vector2(me.x,me.y)
-
          controls.target.set(me.x,me.y,0.12)
          camera.position.set(me.x,me.y)
+         me.element.classList.add('visible')
     }, 
     // Error
     (err) => {
