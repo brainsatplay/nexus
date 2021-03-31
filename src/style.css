@@ -43,8 +43,7 @@ body {
 }
 
 #gameHero {
-    transition-delay: 2s;
-    transition-duration: 3.0s;
+    transition-duration: 1.5s;
     transition-property: opacity;
 }
 
@@ -76,7 +75,7 @@ section {
     z-index: 2;
     transform: scaleX(0);
     transform-origin: top left;
-    transition: transform 0.5s;
+    transition: transform 1.5s;
     will-change: transform;
 }
 
@@ -91,7 +90,8 @@ section {
     top: 50%;
     left: 50%;
     z-index: 1;
-    /* background: red; */
+    transition: transform 0.5s;
+    will-change: transform;
 }
 
 .point:active {

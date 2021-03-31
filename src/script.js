@@ -32,12 +32,20 @@ const loadingBarElement = document.querySelector('.loading-bar')
 const loadingManager = new THREE.LoadingManager(
     // Loaded
     () => {
-        gsap.delayedCall(0.5,() => 
+        gsap.delayedCall(3.0,() => 
         {
         gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0 })
         loadingBarElement.classList.add('ended')
         loadingBarElement.style.transform = ''
+        document.getElementById("gameHero").style.opacity = 0;
+
+        gsap.delayedCall(2.0,() => 
+        {
+            // Get My Location
+            getGeolocation()
+            glitchPass.enabled = true
         })
+    })
     },
 
     // Progress
@@ -206,7 +214,7 @@ effectComposer.addPass(renderPass)
 
 const glitchPass = new GlitchPass()
 glitchPass.goWild = false
-glitchPass.enabled = true
+glitchPass.enabled = false
 effectComposer.addPass(glitchPass)
 
 const shaderPass = new ShaderPass(RGBShiftShader)
@@ -379,9 +387,6 @@ var animate = function () {
     effectComposer.render()
 };
 
-// Get My Location
-getGeolocation()
-
 
 // Stats
 // const stats = Stats()
@@ -437,7 +442,6 @@ function getGeolocation(){
          material.uniforms.point.value = new THREE.Vector2(me.x,me.y)
          controls.target.set(me.x,me.y,0.12)
          camera.position.set(me.x,me.y)
-         me.element.classList.add('visible')
     }, 
     // Error
     (err) => {

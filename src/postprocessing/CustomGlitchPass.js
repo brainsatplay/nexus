@@ -128,7 +128,7 @@ GlitchPass.prototype = Object.assign( Object.create( Pass.prototype ), {
     },
     
     generateTrigger: function(){
-        this.randGlitchTime = THREE.Math.randInt( 0, 500 );
+        this.randGlitchTime = THREE.Math.randInt( 100, 500 );
     },
 	generateHeightmap: function ( dt_size ) {
 

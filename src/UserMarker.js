@@ -20,6 +20,7 @@ export class UserMarker {
     this.createMarker()
     this.createHTMLElement()
     this.element = document.querySelector(`.point-${this.name}`)
+    this.active = false;
   }
 
   createHTMLElement(){
@@ -37,10 +38,10 @@ export class UserMarker {
       camera.position.x,
       camera.position.y,
       camera.position.z))
-    if (distanceToPoint < 0.1){
-      this.element.classList.remove('visible')
-    } else {
+    if (distanceToPoint > 0.1 && this.active){
       this.element.classList.add('visible')
+    } else {
+      this.element.classList.remove('visible')
     }
     screenPos.project(camera)
     let translateX = window.innerWidth * screenPos.x * 0.5
@@ -53,7 +54,6 @@ export class UserMarker {
     this.meshHeight = meshHeight;
     this.x = this.mercX();
     this.y = this.mercY();
-    console.log(this.x,this.y)
     this.createMarker()
   }
 
@@ -83,6 +83,7 @@ export class UserMarker {
     this.marker = new THREE.Mesh( this.geometry, this.material );
     this.marker.position.set(this.x, this.y, this.z);
     this.marker.geometry.computeBoundingBox()
+    this.active = true;
   }
 
   mercX(lon=this.longitude) { 
